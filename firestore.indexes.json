@@ -1,0 +1,52 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "medicineLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "scheduledAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dateTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "symptoms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "loggedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vitals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "loggedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "weight",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "loggedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "communityPosts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "group", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,134 @@
+{
+  "@@locale": "en",
+  "appName": "Pregnancy Companion",
+  "@appName": { "description": "The application name" },
+  "tagline": "Your journey, cared for",
+  "@tagline": { "description": "Splash screen subtitle" },
+
+  "actionContinue": "Continue",
+  "actionNext": "Next",
+  "actionBack": "Back",
+  "actionSkip": "Skip",
+  "actionSave": "Save",
+  "actionCancel": "Cancel",
+  "actionRetry": "Retry",
+  "actionDelete": "Delete",
+
+  "navHome": "Home",
+  "navTracker": "Tracker",
+  "navTools": "Tools",
+  "navCommunity": "Community",
+  "navProfile": "Profile",
+
+  "weekLabel": "Week {number}",
+  "@weekLabel": {
+    "description": "Current pregnancy week",
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "daysToGo": "{count, plural, =0{Due today} one{{count} day to go} other{{count} days to go}}",
+  "@daysToGo": {
+    "description": "Days remaining until due date",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+
+  "emergency": "Emergency",
+  "medicalDisclaimer": "This app provides general information and is not a substitute for professional medical advice. Always consult your doctor.",
+
+  "dashGreeting": "Hi, {name} 👋",
+  "@dashGreeting": {
+    "description": "Home screen greeting",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "dashLoadingJourney": "Loading your journey…",
+  "dashTodayHeader": "Today · Day {day} of week {week}",
+  "@dashTodayHeader": {
+    "placeholders": { "day": { "type": "int" }, "week": { "type": "int" } }
+  },
+  "dashBabySize": "baby is the size of a {size}",
+  "@dashBabySize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "dashSmileTitle": "A little smile for today",
+  "dashThisWeekSize": "This week · size of {size}",
+  "@dashThisWeekSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "dashOpenWeekTracker": "Open week tracker →",
+  "dashNutritionTip": "Nutrition tip",
+  "dashMedicines": "Medicines",
+  "dashWater": "Water",
+  "dashNextAppointment": "Next appointment",
+  "dashNoneScheduled": "None scheduled",
+  "dashEmergencyBanner": "Emergency & SOS — quick help when you need it",
+  "dashSosRaised": "{name} raised an SOS — tap for help",
+  "@dashSosRaised": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "dashResolve": "Resolve",
+  "dashProgressJourney": "{percent}% of your journey",
+  "@dashProgressJourney": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+
+  "profileTitle": "Profile",
+  "profileYourProfile": "Your profile",
+  "profileEditProfile": "Edit profile",
+  "sectionPregnancy": "Pregnancy",
+  "fieldCurrentWeek": "Current week",
+  "fieldDueDate": "Due date",
+  "fieldRisk": "Risk",
+  "fieldDoctor": "Doctor",
+  "fieldHospital": "Hospital",
+  "fieldBloodGroup": "Blood group",
+  "profileEditPregnancy": "Edit pregnancy details",
+  "sectionAppearance": "Appearance",
+  "settingTheme": "Theme",
+  "settingLanguage": "Language",
+  "settingTextSize": "Text size",
+  "sectionAbout": "About",
+  "aboutPrivacy": "Privacy policy",
+  "aboutTerms": "Terms of service",
+  "actionSignOut": "Sign out",
+  "actionDeleteAccount": "Delete account",
+  "deleteAccountTitle": "Delete account?",
+  "deleteAccountBody": "This permanently deletes your account and data. This cannot be undone.",
+  "deleteAccountPasswordLabel": "Enter your password to confirm",
+  "deleteAccountReauthNote": "You’ll be asked to confirm your identity to continue.",
+  "deleteAccountError": "Could not delete account. Please try again.",
+  "avatarChangePhoto": "Change photo",
+  "avatarRemovePhoto": "Remove photo",
+
+  "toolsMedicines": "Medicines",
+  "toolsAppointments": "Appointments",
+  "toolsSymptoms": "Symptoms",
+  "toolsWater": "Water",
+  "toolsWeight": "Weight",
+  "toolsKickCounter": "Kick counter",
+  "toolsContractions": "Contractions",
+  "toolsReport": "Report",
+  "toolsBloodPressure": "Blood pressure",
+  "toolsBloodSugar": "Blood sugar",
+  "toolsSleep": "Sleep",
+  "toolsVaccinations": "Vaccinations",
+  "toolsHospitalBag": "Hospital bag",
+  "toolsReportsInsights": "Reports & Insights",
+  "toolsNutrition": "Nutrition",
+  "toolsExercise": "Exercise",
+  "toolsCalendar": "Calendar",
+  "toolsJournal": "Journal",
+  "toolsMemories": "Memories",
+  "toolsPartnerFamily": "Partner & family",
+  "toolsAiHealth": "AI health tools",
+  "toolsCommunity": "Community",
+  "toolsBabyNames": "Baby names",
+  "toolsBirthPlan": "Birth plan",
+  "toolsShopping": "Shopping list",
+  "toolsPremium": "Premium",
+  "toolsWeekTracker": "Week tracker",
+  "toolsEmergency": "Emergency",
+  "toolsDoctorPortal": "Doctor portal"
+}

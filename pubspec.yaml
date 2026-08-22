@@ -1,0 +1,124 @@
+name: pregnancy_companion
+description: "Pregnancy Companion — a secure, AI-assisted pregnancy app for mothers, partners, family and doctors."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management & DI
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.6.2
+
+  # Local storage (offline)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.3
+
+  # Firebase
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.1
+  firebase_storage: ^12.3.7
+  cloud_functions: ^5.1.5
+  firebase_messaging: ^15.1.6
+  # firebase_crashlytics removed 2026-08-09: its native ComponentRegistrar was
+  # stripped by R8 in release builds ("FirebaseCrashlytics component is not
+  # present"), which made Firebase.initializeApp() throw and hung the app on the
+  # splash on real devices. Re-introduce with aligned versions (or Sentry) later.
+  firebase_analytics: ^11.3.6
+
+  # Auth providers
+  google_sign_in: ^6.2.2
+  sign_in_with_apple: ^6.1.3
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+
+  # Connectivity / sync
+  connectivity_plus: ^6.1.0
+
+  # Home-screen widget (Android)
+  home_widget: ^0.7.0
+
+  # UI / media
+  lottie: ^3.1.3
+  fl_chart: ^0.69.2
+  cached_network_image: ^3.4.1
+  google_fonts: ^6.2.1
+
+  # Utilities
+  intl: ^0.20.2
+  equatable: ^2.0.7
+  uuid: ^4.5.1
+  url_launcher: ^6.3.1
+  http: ^1.2.2
+
+  # Documents & media (PDF export, prescription/lab scanning)
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  image_picker: ^1.1.2
+  file_picker: ^8.1.6
+  path_provider: ^2.1.5
+  # Playback for on-device memory videos
+  video_player: ^2.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+  # Icon & splash generators (used at build time only)
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.3
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lottie/
+    - assets/data/
+
+  # Fonts are loaded via google_fonts at runtime; bundle here for offline if desired.
+
+# --- App launcher icon (dart run flutter_launcher_icons) ---
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#14564D"
+  adaptive_icon_foreground: "assets/icon/icon_fg.png"
+  web:
+    generated: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#14564D"
+    theme_color: "#14564D"
+
+# --- Native splash screen (dart run flutter_native_splash:create) ---
+flutter_native_splash:
+  color: "#14564D"
+  image: "assets/icon/splash.png"
+  color_dark: "#111615"
+  image_dark: "assets/icon/splash.png"
+  android_12:
+    image: "assets/icon/splash.png"
+    icon_background_color: "#14564D"
+    image_dark: "assets/icon/splash.png"
+    icon_background_color_dark: "#111615"
+  web: false

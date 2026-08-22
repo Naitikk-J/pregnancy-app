@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// Cloud Storage rules. Medical reports, journal media and profile photos are
+// namespaced by pregnancy / user so only authorized users can read them.
+//
+// Pregnancy media is member-scoped: Storage rules read the pregnancy doc from
+// Firestore (via firestore.get/exists) and check the caller against the same
+// `members` map the Firestore tracker rules use, so only members can read or
+// upload. Membership is thus enforced by the rules themselves, not just the app.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isImageOrPdf() {
+      return request.resource.contentType.matches('image/.*')
+        || request.resource.contentType == 'application/pdf';
+    }
+    function underSizeLimit() {
+      return request.resource.size < 15 * 1024 * 1024; // 15 MB
+    }
+    // A signed-in caller who is a member of pregnancy `pid`. Mirrors the
+    // Firestore `isMember(pid)` model: `members` is a { uid: {...} } map that
+    // always includes the owner (seeded at creation) plus any joined partners.
+    // exists() guards get() so a missing pregnancy doc fails closed.
+    function isPregnancyMember(pid) {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/pregnancies/$(pid))
+        && request.auth.uid in
+           firestore.get(/databases/(default)/documents/pregnancies/$(pid)).data.members;
+    }
+
+    // Profile photos: /users/{uid}/avatar/...
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId
+        && isImageOrPdf() && underSizeLimit();
+    }
+
+    // Pregnancy media (reports, scans, journal): /pregnancies/{pid}/{uid}/...
+    // The uploader's uid is embedded so writes are attributable. Read and write
+    // are both restricted to members of the pregnancy — the uploader must also
+    // be a current member, so a non-member can neither read nor dump files into
+    // another family's pregnancy namespace.
+    match /pregnancies/{pid}/{userId}/{allPaths=**} {
+      allow read: if isPregnancyMember(pid);
+      allow write: if request.auth.uid == userId
+        && isPregnancyMember(pid)
+        && isImageOrPdf() && underSizeLimit();
+    }
+
+    // Public app assets (read-only to everyone).
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "pregnancy-ai-worker",
+  "private": true,
+  "description": "Cloudflare Worker proxy for the Ask Mira Claude assistant (free-tier alternative to a Firebase Cloud Function).",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.toml",
+    "deploy": "wrangler deploy --config wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

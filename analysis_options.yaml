@@ -1,0 +1,19 @@
+# Standard Flutter lint set. Kept intentionally close to `flutter_lints`
+# defaults so `flutter analyze` stays green in CI; teams can tighten these over
+# time (e.g. require_trailing_commas, unawaited_futures) once formatting/CI
+# auto-fix hooks are in place.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/l10n/app_localizations*.dart"
+    - "build/**"
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    avoid_print: true

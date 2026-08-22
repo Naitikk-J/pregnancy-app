@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "note": "Bundled offline seed for the 40-week tracker. Full content is fetched from Firestore `weekContent/{week}` and cached; this file guarantees the tracker works with no network on first run. Sample weeks shown; remaining weeks follow the same schema.",
+  "weeks": [
+    {
+      "week": 4,
+      "trimester": "first",
+      "sizeComparison": "Poppy seed",
+      "babyLengthMm": 1,
+      "babyDevelopment": "The blastocyst has implanted and the amniotic sac and placenta are forming. The neural tube, which becomes the brain and spinal cord, is beginning to develop.",
+      "motherChanges": "You may notice a missed period. Early signs like tender breasts and fatigue can begin. Hormone hCG is now detectable by a pregnancy test.",
+      "avoid": ["Alcohol", "Smoking", "Raw or undercooked meat", "Unpasteurized dairy"],
+      "advice": "Start a prenatal vitamin with at least 400 mcg of folic acid if you haven't already.",
+      "nutrition": ["Folic acid", "Iron", "Leafy greens", "Whole grains"],
+      "exercises": ["Gentle walking", "Pelvic floor (Kegel) exercises"],
+      "yoga": ["Sukhasana (easy pose) breathing"],
+      "faqs": [
+        {"q": "Is spotting normal?", "a": "Light implantation spotting can be normal, but contact your doctor for heavy bleeding or pain."}
+      ]
+    },
+    {
+      "week": 12,
+      "trimester": "first",
+      "sizeComparison": "Lime",
+      "babyLengthMm": 54,
+      "babyDevelopment": "Reflexes are developing, fingers and toes are separated, and the intestines move into the abdomen. The baby can make sucking movements.",
+      "motherChanges": "Nausea often begins to ease. Your uterus is growing out of the pelvis. Risk of miscarriage drops significantly at the end of the first trimester.",
+      "avoid": ["High-mercury fish", "Excess caffeine", "Unpasteurized cheese"],
+      "advice": "Your first-trimester screening/NT scan is usually done around now.",
+      "nutrition": ["Protein", "Calcium", "Vitamin D", "Omega-3"],
+      "exercises": ["Walking", "Prenatal stretching"],
+      "yoga": ["Cat-cow (Marjaryasana)"],
+      "faqs": [
+        {"q": "When will I show?", "a": "Many people begin to show between weeks 12 and 16, earlier in subsequent pregnancies."}
+      ]
+    },
+    {
+      "week": 20,
+      "trimester": "second",
+      "sizeComparison": "Banana",
+      "babyLengthMm": 160,
+      "babyDevelopment": "You're at the halfway point. The baby is developing a regular sleep-wake pattern and can hear sounds. The anomaly scan checks organ development.",
+      "motherChanges": "You may feel the first kicks (quickening). Your bump is now clearly visible.",
+      "avoid": ["Lying flat on your back for long periods", "Heavy lifting"],
+      "advice": "Schedule your mid-pregnancy anomaly ultrasound if not already done.",
+      "nutrition": ["Iron", "Calcium", "Fibre", "Water"],
+      "exercises": ["Swimming", "Prenatal yoga", "Walking"],
+      "yoga": ["Konasana (side stretch)"],
+      "faqs": [
+        {"q": "How many kicks are normal?", "a": "Movement patterns vary. Later in pregnancy, track kicks daily and tell your doctor about reduced movement."}
+      ]
+    },
+    {
+      "week": 28,
+      "trimester": "third",
+      "sizeComparison": "Eggplant",
+      "babyLengthMm": 250,
+      "babyDevelopment": "Eyes can open and close, and the baby can dream (REM sleep). Lungs are maturing. Welcome to the third trimester.",
+      "motherChanges": "You may feel more short of breath and notice Braxton Hicks contractions. Glucose screening for gestational diabetes is common around now.",
+      "avoid": ["Skipping meals", "Standing for very long periods"],
+      "advice": "Ask your doctor about the Tdap vaccine and monitoring baby's movements.",
+      "nutrition": ["Iron", "Protein", "Calcium", "Vitamin C"],
+      "exercises": ["Walking", "Pelvic tilts", "Kegels"],
+      "yoga": ["Supported child's pose"],
+      "faqs": [
+        {"q": "When should I start counting kicks?", "a": "Around week 28 many doctors recommend daily kick counts; use the in-app Kick Counter."}
+      ]
+    }
+  ]
+}

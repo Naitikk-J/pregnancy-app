@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/widget_week"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pregnancy Companion"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Open to set up your journey"
+        android:textColor="#EAF3F0"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/widget_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text=""
+        android:textColor="#F9D3CB"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
