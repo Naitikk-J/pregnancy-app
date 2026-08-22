@@ -9,6 +9,45 @@ A secure, offline-first, AI-assisted pregnancy application for **mothers, partne
 
 ---
 
+## 🎨 For designers — where the screens live
+
+Every screen (UI page) lives under `lib/features/<feature>/presentation/`, in a file
+ending in `_screen.dart` (a few use `_view.dart`). The naming makes any screen easy to
+find — e.g. the kick counter is `lib/features/kick_counter/presentation/kick_counter_screen.dart`.
+
+**Design tokens** (edit these to change the look app-wide):
+
+| What | File |
+|------|------|
+| Colors / palette | `lib/core/theme/app_colors.dart` |
+| Typography / fonts | `lib/core/theme/app_typography.dart` |
+| Spacing / sizing | `lib/core/theme/app_spacing.dart` |
+| Overall Material 3 theme | `lib/core/theme/app_theme.dart` |
+
+**Reusable components** live in `lib/core/widgets/` (used everywhere) and per-feature
+`.../presentation/widgets/` folders.
+
+**Main navigation tabs** (the app shell — `lib/features/app_shell/`):
+
+- **Home** → `dashboard/presentation/screens/dashboard_screen.dart`
+- **Tracker** → `week_tracker/presentation/screens/week_tracker_screen.dart`
+- **Tools** → `tools/presentation/tools_screen.dart`
+- **Profile** → `profile/presentation/screens/profile_tab_screen.dart`
+
+**All screens** (grouped by area):
+
+- **Auth & onboarding:** `auth/…` (login, register, forgot password, phone, onboarding carousel), `onboarding/…/profile_setup_screen.dart`, `splash/…/splash_screen.dart`
+- **Core trackers:** `medicine`, `appointments`, `symptoms`, `water`, `weight`, `blood_pressure` (bp), `blood_sugar` (glucose), `mood`, `sleep`, `kick_counter`, `contractions`
+- **Content & tools:** `nutrition`, `exercise`, `calendar`, `journal`, `memories`, `hospital_bag`, `shopping`, `birth_plan`, `baby_names`, `vaccination`, `recovery`, `reminders`
+- **AI features:** `ai_assistant`, `ai_tools` (meal planner, symptom checker, weekly summary, wellness plan), `document_scan` (prescription/lab analysis)
+- **People & roles:** `partner`, `doctor` (portal + patient detail), `admin`, `community`, `blood_donors`
+- **Reports & insights:** `reports` (hub, health report), `insights`, `emergency`, `premium`, `settings`
+
+> Tip: to see a screen running, open its `_screen.dart` file, then run `flutter run` and
+> navigate to it in the app. Routing is defined in `lib/core/` (GoRouter).
+
+---
+
 ## Prerequisites
 
 1. **Flutter SDK** ≥ 3.24 (stable channel) — <https://docs.flutter.dev/get-started/install>
