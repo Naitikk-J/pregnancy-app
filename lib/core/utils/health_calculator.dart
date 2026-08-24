@@ -45,9 +45,11 @@ class HealthCalculator {
   /// gestational-diabetes goals (fasting ≤95, 1-hr post-meal ≤140).
   static double glucoseUpperTarget(GlucoseContext context) => switch (context) {
         GlucoseContext.fasting => 95,
-        GlucoseContext.beforeMeal => 95,
-        GlucoseContext.afterMeal => 140,
-        GlucoseContext.random => 140,
+        // Post-meal readings (1-hr goal ≤140).
+        GlucoseContext.breakfast => 140,
+        GlucoseContext.lunch => 140,
+        GlucoseContext.dinner => 140,
+        GlucoseContext.other => 140,
       };
 
   /// Lower bound (mg/dL) below which a reading is hypoglycaemic.

@@ -37,13 +37,13 @@ void main() {
   group('HealthCalculator glucose', () {
     test('fasting target is 95, post-meal 140', () {
       expect(HealthCalculator.glucoseUpperTarget(GlucoseContext.fasting), 95);
-      expect(HealthCalculator.glucoseUpperTarget(GlucoseContext.afterMeal), 140);
+      expect(HealthCalculator.glucoseUpperTarget(GlucoseContext.lunch), 140);
     });
 
     test('inRange respects context and hypo threshold', () {
       expect(HealthCalculator.glucoseInRange(90, GlucoseContext.fasting), isTrue);
       expect(HealthCalculator.glucoseInRange(110, GlucoseContext.fasting), isFalse);
-      expect(HealthCalculator.glucoseInRange(110, GlucoseContext.afterMeal), isTrue);
+      expect(HealthCalculator.glucoseInRange(110, GlucoseContext.lunch), isTrue);
       expect(HealthCalculator.glucoseInRange(60, GlucoseContext.fasting), isFalse);
     });
 
@@ -78,6 +78,34 @@ void main() {
       final restored = GlucoseReading.fromJson(r.toJson());
       expect(restored, r);
       expect(restored.context, GlucoseContext.fasting);
+      expect(restored.hasInsulin, isFalse);
+    });
+
+    test('GlucoseReading round-trips with insulin dose', () {
+      final r = GlucoseReading(
+        id: 'g2',
+        mgDl: 150,
+        context: GlucoseContext.dinner,
+        loggedAt: DateTime.utc(2026, 6, 1, 20),
+        insulinUnits: 4.5,
+        insulinAt: DateTime.utc(2026, 6, 1, 19, 45),
+      );
+      final restored = GlucoseReading.fromJson(r.toJson());
+      expect(restored, r);
+      expect(restored.hasInsulin, isTrue);
+      expect(restored.insulinUnits, 4.5);
+      expect(restored.insulinAt, DateTime.utc(2026, 6, 1, 19, 45));
+    });
+
+    test('legacy afterMeal context maps to a post-meal target', () {
+      final restored = GlucoseReading.fromJson(const {
+        'id': 'g3',
+        'mgDl': 130,
+        'context': 'afterMeal',
+        'loggedAt': '2026-06-01T13:00:00.000Z',
+      });
+      expect(restored.context, GlucoseContext.other);
+      expect(HealthCalculator.glucoseUpperTarget(restored.context), 140);
     });
 
     test('SleepEntry round-trips', () {

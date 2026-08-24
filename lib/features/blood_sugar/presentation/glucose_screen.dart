@@ -101,7 +101,8 @@ class GlucoseScreen extends ConsumerWidget {
                   ),
                   title: Text('${r.mgDl.toStringAsFixed(0)} mg/dL · ${r.status}'),
                   subtitle: Text('${r.context.label} · '
-                      '${DateFormat('EEE, d MMM · HH:mm').format(r.loggedAt)}'),
+                      '${DateFormat('EEE, d MMM · HH:mm').format(r.loggedAt)}'
+                      '${r.hasInsulin ? ' · 💉 ${_insulinLabel(r)}' : ''}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () => ref.read(glucoseCrudProvider)?.delete(r.id),
@@ -117,8 +118,11 @@ class GlucoseScreen extends ConsumerWidget {
 
   Future<void> _addReading(BuildContext context, WidgetRef ref) async {
     final value = TextEditingController();
+    final insulin = TextEditingController();
     var glucoseContext = GlucoseContext.fasting;
     var loggedAt = DateTime.now();
+    // Null = "same as reading time"; a picked value overrides it.
+    DateTime? insulinAt;
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -176,6 +180,43 @@ class GlucoseScreen extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
+              Text('Insulin (optional)', style: ctx.textStyles.labelLarge),
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                label: 'Units taken',
+                controller: insulin,
+                prefixIcon: Icons.vaccines_outlined,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,1}')),
+                ],
+                onChanged: (_) => setState(() {}),
+              ),
+              // Insulin time only matters once a dose is entered.
+              if (insulin.text.trim().isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.schedule),
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    minimumSize: const Size.fromHeight(52),
+                  ),
+                  label: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(insulinAt == null
+                        ? 'Insulin taken: same as reading time'
+                        : 'Insulin taken: '
+                            '${DateFormat('EEE, d MMM · h:mm a').format(insulinAt!)}'),
+                  ),
+                  onPressed: () async {
+                    final picked = await pickDateTime(
+                        ctx, initial: insulinAt ?? loggedAt);
+                    if (picked != null) setState(() => insulinAt = picked);
+                  },
+                ),
+              ],
+              const SizedBox(height: AppSpacing.lg),
               AppButton(
                   label: 'Save', onPressed: () => Navigator.pop(ctx, true)),
             ],
@@ -186,6 +227,8 @@ class GlucoseScreen extends ConsumerWidget {
 
     if (ok == true) {
       final v = double.tryParse(value.text.trim());
+      final units = double.tryParse(insulin.text.trim());
+      final hasInsulin = units != null && units > 0;
       if (v != null && v > 0) {
         await ref.read(glucoseCrudProvider)?.upsert(
               GlucoseReading(
@@ -193,11 +236,23 @@ class GlucoseScreen extends ConsumerWidget {
                 mgDl: v,
                 context: glucoseContext,
                 loggedAt: loggedAt,
+                insulinUnits: hasInsulin ? units : null,
+                insulinAt: hasInsulin ? (insulinAt ?? loggedAt) : null,
               ),
             );
       }
     }
     value.dispose();
+    insulin.dispose();
+  }
+
+  /// e.g. "4u at 8:05 am" (units without a needless ".0"), for a reading that
+  /// has insulin attached.
+  String _insulinLabel(GlucoseReading r) {
+    final u = r.insulinUnits!;
+    final units = u % 1 == 0 ? u.toStringAsFixed(0) : u.toStringAsFixed(1);
+    final at = r.insulinAt ?? r.loggedAt;
+    return '${units}u at ${DateFormat('h:mm a').format(at)}';
   }
 }
 

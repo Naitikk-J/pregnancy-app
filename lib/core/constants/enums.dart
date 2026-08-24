@@ -95,21 +95,24 @@ enum BpCategory {
 /// When a blood-sugar reading was taken — determines the healthy target range.
 enum GlucoseContext {
   fasting,
-  beforeMeal,
-  afterMeal,
-  random;
+  breakfast,
+  lunch,
+  dinner,
+  other;
 
   String get label => switch (this) {
         GlucoseContext.fasting => 'Fasting',
-        GlucoseContext.beforeMeal => 'Before meal',
-        GlucoseContext.afterMeal => 'After meal',
-        GlucoseContext.random => 'Random',
+        GlucoseContext.breakfast => 'Breakfast',
+        GlucoseContext.lunch => 'Lunch',
+        GlucoseContext.dinner => 'Dinner',
+        GlucoseContext.other => 'Other',
       };
 
   static GlucoseContext fromName(String? name) =>
       GlucoseContext.values.firstWhere(
         (c) => c.name == name,
-        orElse: () => GlucoseContext.random,
+        // Legacy readings stored as beforeMeal/afterMeal/random land here.
+        orElse: () => GlucoseContext.other,
       );
 }
 
