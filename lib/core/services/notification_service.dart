@@ -31,21 +31,42 @@ class NotificationService {
   static const String snoozeActionId = 'MED_SNOOZE';
   static const Duration snoozeFor = Duration(minutes: 10);
 
+  /// Channel IDs are versioned (`_v2`): a channel's sound/importance is locked
+  /// on Android the moment it's first created and can never be changed in code
+  /// afterwards. When we need different sound behaviour we must ship a *new* id
+  /// and delete the old one (see [_migrateChannels]) — otherwise the device
+  /// keeps the original (silent) channel and reminders stay mute.
+  static const List<String> _legacyChannelIds = [
+    'medicine_reminders',
+    'general_reminders',
+  ];
+
   static const AndroidNotificationChannel medicineChannel =
       AndroidNotificationChannel(
-    'medicine_reminders',
+    'medicine_reminders_v2',
     'Medicine reminders',
     description: 'Alarms for your scheduled medicines',
     importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    // Ring on the alarm stream (alarm volume, audible even on vibrate/DND with
+    // the alarm category) rather than the quiet notification stream.
+    audioAttributesUsage: AudioAttributesUsage.alarm,
   );
 
   static const AndroidNotificationChannel generalChannel =
       AndroidNotificationChannel(
-    'general_reminders',
+    'general_reminders_v2',
     'Water, appointments and other reminders',
     description: 'Water, appointments and other reminders',
     importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
   );
+
+  /// Repeats the alarm sound until the user acts on it (Android FLAG_INSISTENT),
+  /// so a medicine reminder behaves like an alarm clock instead of a single ding.
+  static final Int32List _insistentFlag = Int32List.fromList(<int>[4]);
 
   static const List<AndroidNotificationAction> _medicineActions = [
     AndroidNotificationAction(takenActionId, 'Taken',
@@ -75,8 +96,22 @@ class NotificationService {
     final android =
         _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
+    await _migrateChannels(android);
     await android?.createNotificationChannel(medicineChannel);
     await android?.createNotificationChannel(generalChannel);
+  }
+
+  /// Removes superseded channels so their old (silent) settings don't linger in
+  /// the system, and their duplicate entries disappear from the app's
+  /// notification settings screen.
+  Future<void> _migrateChannels(
+      AndroidFlutterLocalNotificationsPlugin? android) async {
+    if (android == null) return;
+    for (final id in _legacyChannelIds) {
+      try {
+        await android.deleteNotificationChannel(id);
+      } catch (_) {}
+    }
   }
 
   /// Resolve and set the device's time zone so scheduled reminders fire at the
@@ -295,6 +330,14 @@ class NotificationService {
         channelDescription: channel.description,
         importance: channel.importance,
         priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        // Alarm-stream audio for medicines so it's loud and audible in DND.
+        audioAttributesUsage: isMedicine
+            ? AudioAttributesUsage.alarm
+            : AudioAttributesUsage.notification,
+        // Keep ringing until "Taken"/"Snooze" is tapped (alarm-clock feel).
+        additionalFlags: isMedicine ? _insistentFlag : null,
         category: isMedicine
             ? AndroidNotificationCategory.alarm
             : AndroidNotificationCategory.reminder,
@@ -439,6 +482,10 @@ Future<void> _scheduleSnooze(String medId, String time) async {
         channelDescription: NotificationService.medicineChannel.description,
         importance: Importance.max,
         priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        additionalFlags: Int32List.fromList(<int>[4]),
         category: AndroidNotificationCategory.alarm,
         fullScreenIntent: true,
         actions: const [
