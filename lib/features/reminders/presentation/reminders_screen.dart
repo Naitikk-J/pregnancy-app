@@ -121,14 +121,7 @@ class RemindersScreen extends ConsumerWidget {
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.lg,
-            bottom: MediaQuery.viewInsetsOf(ctx).bottom +
-                MediaQuery.viewPaddingOf(ctx).bottom +
-                AppSpacing.lg,
-          ),
+          padding: ctx.sheetPadding(),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

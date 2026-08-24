@@ -169,12 +169,7 @@ class WaterScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          top: AppSpacing.lg,
-          bottom: MediaQuery.viewInsetsOf(ctx).bottom + AppSpacing.lg,
-        ),
+        padding: ctx.sheetPadding(),
         child: StatefulBuilder(
           builder: (ctx, setState) => Column(
             mainAxisSize: MainAxisSize.min,

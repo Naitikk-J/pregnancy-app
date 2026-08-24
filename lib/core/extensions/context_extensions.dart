@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../theme/app_spacing.dart';
 
 /// Convenience accessors on [BuildContext] to cut boilerplate in widgets.
 extension BuildContextX on BuildContext {
@@ -20,6 +21,27 @@ extension BuildContextX on BuildContext {
   bool get isCompact => screenWidth < 600;
   bool get isMedium => screenWidth >= 600 && screenWidth < 840;
   bool get isExpanded => screenWidth >= 840;
+
+  /// Padding for a scroll-controlled modal bottom sheet. Insets every side by
+  /// [horizontal]/[top], and pads the bottom by the on-screen keyboard height
+  /// **plus the system navigation-bar inset** — so the last control (e.g. a Save
+  /// button) is never hidden behind the keyboard or the gesture / 3-button nav
+  /// bar. `showModalBottomSheet` applies no safe area of its own, which is why
+  /// the bar would otherwise overlap the sheet's bottom.
+  EdgeInsets sheetPadding({
+    double horizontal = AppSpacing.lg,
+    double top = AppSpacing.lg,
+  }) {
+    final m = MediaQuery.of(this);
+    return EdgeInsets.only(
+      left: horizontal,
+      right: horizontal,
+      top: top,
+      // viewInsets = keyboard; viewPadding.bottom = nav bar (stays put when the
+      // keyboard is up, so both are additive and neither control is clipped).
+      bottom: m.viewInsets.bottom + m.viewPadding.bottom + AppSpacing.lg,
+    );
+  }
 
   void showSnack(String message, {bool isError = false}) {
     final messenger = ScaffoldMessenger.of(this)..hideCurrentSnackBar();
