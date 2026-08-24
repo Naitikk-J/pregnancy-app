@@ -75,6 +75,14 @@ final notificationServiceProvider = Provider<NotificationService>(
       throw UnimplementedError('notificationServiceProvider override needed'),
 );
 
+/// Current notification/alarm readiness (permission + exact-alarm state), used
+/// to warn the user in-app when reminders would be silently blocked. Invalidate
+/// it after requesting permissions to refresh the banners.
+final notificationStatusProvider =
+    FutureProvider<NotificationStatus>((ref) async {
+  return ref.read(notificationServiceProvider).status();
+});
+
 final pushMessagingServiceProvider = Provider<PushMessagingService>(
   (ref) =>
       throw UnimplementedError('pushMessagingServiceProvider override needed'),

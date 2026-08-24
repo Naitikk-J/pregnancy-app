@@ -36,6 +36,7 @@ class Medicine extends Equatable {
     this.active = true,
     this.asNeeded = false,
     this.durationDays,
+    this.weekdays = const [],
   });
 
   final String id;
@@ -45,6 +46,15 @@ class Medicine extends Equatable {
 
   /// Times of day to take it, as "HH:mm" 24-hour strings. Empty for SOS meds.
   final List<String> times;
+
+  /// Which weekdays the medicine is taken on, as `DateTime.weekday` values
+  /// (1 = Monday … 7 = Sunday). Empty means **every day** (the default). A
+  /// subset (e.g. `[1, 4]`) means a weekly schedule (e.g. Mon & Thu only).
+  final List<int> weekdays;
+
+  /// True when this med runs on a specific-days-of-week schedule rather than
+  /// every day.
+  bool get isWeekly => weekdays.isNotEmpty && weekdays.length < 7;
 
   final DateTime startDate;
   final DateTime? endDate;
@@ -102,6 +112,8 @@ class Medicine extends Equatable {
       final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
       if (d.isAfter(end)) return false;
     }
+    // Weekly schedule: only active on the selected weekdays.
+    if (weekdays.isNotEmpty && !weekdays.contains(d.weekday)) return false;
     return true;
   }
 
@@ -131,6 +143,7 @@ class Medicine extends Equatable {
         active: active ?? this.active,
         asNeeded: asNeeded,
         durationDays: durationDays,
+        weekdays: weekdays,
       );
 
   Map<String, dynamic> toJson() => {
@@ -146,6 +159,7 @@ class Medicine extends Equatable {
         'active': active,
         'asNeeded': asNeeded,
         'durationDays': durationDays,
+        'weekdays': weekdays,
         'createdAt': DateTime.now().toUtc().toIso8601String(),
       };
 
@@ -170,11 +184,15 @@ class Medicine extends Equatable {
         active: json['active'] as bool? ?? true,
         asNeeded: json['asNeeded'] as bool? ?? false,
         durationDays: (json['durationDays'] as num?)?.toInt(),
+        weekdays: (json['weekdays'] as List<dynamic>?)
+                ?.map((e) => (e as num).toInt())
+                .toList() ??
+            const [],
       );
 
   @override
   List<Object?> get props =>
-      [id, name, dosage, timing, times, active, asNeeded, durationDays];
+      [id, name, dosage, timing, times, active, asNeeded, durationDays, weekdays];
 }
 
 /// A record that a specific dose (medicine + date + time) was taken/skipped.

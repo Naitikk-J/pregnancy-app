@@ -22,6 +22,11 @@ class NotificationService {
   /// Prefs key: pending "taken" doses as "medId|HH:mm|yyyy-MM-dd" strings.
   static const String pendingTakenKey = 'pending_taken_doses';
   static const String _tzNameKey = 'device_tz_name';
+  static const String _permsRequestedKey = 'perms_requested_schema';
+
+  /// Bump whenever the set of permissions requested changes, so an app update
+  /// re-prompts the user for anything newly required.
+  static const int permsSchemaVersion = 1;
   static const String takenActionId = 'MED_TAKEN';
   static const String snoozeActionId = 'MED_SNOOZE';
   static const Duration snoozeFor = Duration(minutes: 10);
@@ -121,6 +126,25 @@ class NotificationService {
     return androidGranted && iosGranted;
   }
 
+  /// Requests all notification/alarm permissions **once per install** (and again
+  /// after an app update that bumps [permsSchemaVersion]). Safe to call on every
+  /// app open: it no-ops once already requested for this version, so it never
+  /// re-opens the exact-alarm settings screen on later launches. This is what
+  /// makes the app ask up front — on first launch after install/update — instead
+  /// of only when the user first saves a medicine or reminder.
+  Future<void> ensurePermissionsRequested() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getInt(_permsRequestedKey) == permsSchemaVersion) return;
+      await requestPermissions();
+      await prefs.setInt(_permsRequestedKey, permsSchemaVersion);
+    } catch (e) {
+      // Best-effort — the per-feature request paths (saving a medicine/reminder,
+      // the status banners) still cover it if this fails.
+      if (kDebugMode) debugPrint('[notify] ensurePermissions failed: $e');
+    }
+  }
+
   /// A snapshot of the notification/alarm readiness on this device, so the UI
   /// can tell the user exactly what (if anything) is blocking reminders.
   Future<NotificationStatus> status() async {
@@ -181,6 +205,30 @@ class NotificationService {
       when: _nextInstanceOf(hour, minute),
       details: _details(isMedicine),
       matchComponents: DateTimeComponents.time,
+      payload: payload,
+    );
+  }
+
+  /// Schedule a notification that repeats weekly on [weekday] (1 = Monday …
+  /// 7 = Sunday, matching `DateTime.weekday`) at the given time. Used for
+  /// medicines taken only on specific days of the week.
+  Future<void> scheduleWeekly({
+    required int id,
+    required String title,
+    required String body,
+    required int weekday,
+    required int hour,
+    required int minute,
+    bool isMedicine = false,
+    String? payload,
+  }) async {
+    await _zonedScheduleSafe(
+      id: id,
+      title: title,
+      body: body,
+      when: _nextInstanceOfWeekday(weekday, hour, minute),
+      details: _details(isMedicine),
+      matchComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: payload,
     );
   }
@@ -269,6 +317,16 @@ class NotificationService {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     if (kDebugMode) debugPrint('[notify] daily -> $scheduled');
+    return scheduled;
+  }
+
+  /// The next occurrence of [weekday] (1 = Mon … 7 = Sun) at [hour]:[minute].
+  tz.TZDateTime _nextInstanceOfWeekday(int weekday, int hour, int minute) {
+    var scheduled = _nextInstanceOf(hour, minute);
+    while (scheduled.weekday != weekday) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    if (kDebugMode) debugPrint('[notify] weekly($weekday) -> $scheduled');
     return scheduled;
   }
 }

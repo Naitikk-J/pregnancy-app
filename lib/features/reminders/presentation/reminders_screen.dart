@@ -46,6 +46,7 @@ class RemindersScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
+              const ReminderStatusBanner(),
               if (upcoming.isNotEmpty) ...[
                 const SectionHeader(title: 'Upcoming'),
                 for (final r in upcoming) _tile(context, ref, r),

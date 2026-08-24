@@ -15,79 +15,6 @@ import '../domain/medicine.dart';
 import 'medicine_info_sheet.dart';
 import 'medicine_providers.dart';
 
-/// Warns — right at the top of the Medicines screen — when the OS is blocking
-/// reminders (notifications turned off, or exact alarms disabled), with a tap to
-/// fix it. This is what turns "my reminders never fire" from a silent mystery
-/// into something the user can act on.
-class _ReminderStatusBanner extends ConsumerWidget {
-  const _ReminderStatusBanner();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(notificationStatusProvider).valueOrNull;
-    if (status == null || status.ready && status.exactAlarmsAllowed) {
-      return const SizedBox.shrink();
-    }
-    final blocked = !status.notificationsEnabled;
-    final color = blocked
-        ? context.colors.errorContainer
-        : context.colors.tertiaryContainer;
-    final onColor = blocked
-        ? context.colors.onErrorContainer
-        : context.colors.onTertiaryContainer;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: AppCard(
-        color: color,
-        onTap: () async {
-          await ref.read(notificationServiceProvider).requestPermissions();
-          ref.invalidate(notificationStatusProvider);
-          if (context.mounted) {
-            context.showSnack(
-              blocked
-                  ? 'If nothing changed, enable notifications in Settings → Apps '
-                      '→ Pregnancy Companion, and turn off battery optimization.'
-                  : 'Exact-alarm settings opened — allow it so reminders are on '
-                      'time.',
-            );
-          }
-        },
-        child: Row(
-          children: [
-            Icon(blocked ? Icons.notifications_off_outlined : Icons.alarm_off,
-                color: onColor),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    blocked
-                        ? 'Reminders are blocked'
-                        : 'Reminders may be delayed',
-                    style: context.textStyles.titleSmall?.copyWith(
-                        color: onColor, fontWeight: FontWeight.w700),
-                  ),
-                  Text(
-                    blocked
-                        ? 'Notifications are off for this app — tap to turn them '
-                            'on so medicine alarms can fire.'
-                        : 'Exact alarms are off. Tap to allow precise reminder '
-                            'times.',
-                    style:
-                        context.textStyles.bodySmall?.copyWith(color: onColor),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: onColor),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Medicine scheduler: today's doses (take/skip), refill alerts, and the full
 /// medicine list with add/edit. Saving schedules daily alarm reminders per dose
 /// time. Meds are set up by frequency (times/day) and course length (days) —
@@ -183,7 +110,7 @@ class MedicineScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              const _ReminderStatusBanner(),
+              const ReminderStatusBanner(),
               if (doses.isNotEmpty) ...[
                 const SectionHeader(title: 'Today’s doses'),
                 for (final dose in doses) _doseTile(context, ref, dose),
@@ -456,9 +383,12 @@ class MedicineScreen extends ConsumerWidget {
     if (m.asNeeded) return 'Only when needed (SOS)';
     final freq = m.times.length;
     final perDay = freq == 1 ? 'Once a day' : '$freq times a day';
+    final onDays = m.weekdays.isEmpty
+        ? ''
+        : ' · ${(m.weekdays.toList()..sort()).map((d) => _kWeekdayShort[d]).join(', ')}';
     final course = m.durationDays != null ? ' · for ${m.durationDays} days' : ' · ongoing';
     final at = m.times.isEmpty ? '' : ' · ${m.times.join(', ')}';
-    return '$perDay$course$at';
+    return '$perDay$onDays$course$at';
   }
 
   Future<void> _edit(
@@ -481,6 +411,9 @@ class MedicineScreen extends ConsumerWidget {
     var ongoing =
         existing != null && !existing.asNeeded && existing.durationDays == null;
     var days = existing?.durationDays ?? 5;
+    // Empty set = every day; a subset = weekly (only those weekdays).
+    final weekdays = <int>{...(existing?.weekdays ?? const <int>[])};
+    var specificDays = weekdays.isNotEmpty;
 
     String two(int v) => v.toString().padLeft(2, '0');
 
@@ -606,6 +539,41 @@ class MedicineScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
 
+                  // --- Which days (every day vs specific weekdays) ---
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Only on certain days'),
+                    subtitle: const Text(
+                        'For weekly medicines (e.g. every Mon & Thu)'),
+                    value: specificDays,
+                    onChanged: (v) => setState(() {
+                      specificDays = v;
+                      if (!v) weekdays.clear();
+                    }),
+                  ),
+                  if (specificDays) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        for (var wd = 1; wd <= 7; wd++)
+                          FilterChip(
+                            label: Text(_kWeekdayShort[wd]!),
+                            selected: weekdays.contains(wd),
+                            onSelected: (sel) => setState(() {
+                              if (sel) {
+                                weekdays.add(wd);
+                              } else {
+                                weekdays.remove(wd);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+
                   // --- For how many days ---
                   Row(
                     children: [
@@ -641,6 +609,11 @@ class MedicineScreen extends ConsumerWidget {
                   onPressed: () {
                     if (nameCtrl.text.trim().isEmpty) {
                       ctx.showSnack('Please enter a name.', isError: true);
+                      return;
+                    }
+                    if (!asNeeded && specificDays && weekdays.isEmpty) {
+                      ctx.showSnack('Pick at least one day of the week.',
+                          isError: true);
                       return;
                     }
                     Navigator.pop(ctx, true);
@@ -687,6 +660,9 @@ class MedicineScreen extends ConsumerWidget {
               active: existing?.active ?? true,
               asNeeded: asNeeded,
               durationDays: asNeeded || ongoing ? null : days,
+              weekdays: asNeeded || !specificDays
+                  ? const []
+                  : (weekdays.toList()..sort()),
             ),
             previousTimes: existing?.times ?? const [],
           );
@@ -706,6 +682,17 @@ class MedicineScreen extends ConsumerWidget {
     notesCtrl.dispose();
   }
 }
+
+/// Short weekday labels keyed by `DateTime.weekday` (1 = Mon … 7 = Sun).
+const Map<int, String> _kWeekdayShort = {
+  1: 'Mon',
+  2: 'Tue',
+  3: 'Wed',
+  4: 'Thu',
+  5: 'Fri',
+  6: 'Sat',
+  7: 'Sun',
+};
 
 /// A "- value +" stepper row bounded to [min]..[max].
 class _StepperRow extends StatelessWidget {

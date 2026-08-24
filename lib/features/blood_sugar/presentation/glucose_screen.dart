@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/enums.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/date_time_picker.dart';
 import '../../../core/utils/health_calculator.dart';
 import '../../../core/widgets/widgets.dart';
 import '../domain/glucose_reading.dart';
@@ -117,6 +118,7 @@ class GlucoseScreen extends ConsumerWidget {
   Future<void> _addReading(BuildContext context, WidgetRef ref) async {
     final value = TextEditingController();
     var glucoseContext = GlucoseContext.fasting;
+    var loggedAt = DateTime.now();
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -156,6 +158,23 @@ class GlucoseScreen extends ConsumerWidget {
                     ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.md),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.event),
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                label: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('When: '
+                      '${DateFormat('EEE, d MMM · h:mm a').format(loggedAt)}'),
+                ),
+                onPressed: () async {
+                  final picked = await pickDateTime(ctx, initial: loggedAt);
+                  if (picked != null) setState(() => loggedAt = picked);
+                },
+              ),
               const SizedBox(height: AppSpacing.lg),
               AppButton(
                   label: 'Save', onPressed: () => Navigator.pop(ctx, true)),
@@ -173,7 +192,7 @@ class GlucoseScreen extends ConsumerWidget {
                 id: const Uuid().v4(),
                 mgDl: v,
                 context: glucoseContext,
-                loggedAt: DateTime.now(),
+                loggedAt: loggedAt,
               ),
             );
       }

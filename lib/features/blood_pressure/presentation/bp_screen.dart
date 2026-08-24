@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/enums.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/date_time_picker.dart';
 import '../../../core/widgets/widgets.dart';
 import '../domain/bp_reading.dart';
 import 'bp_providers.dart';
@@ -83,6 +84,7 @@ class BpScreen extends ConsumerWidget {
     final sys = TextEditingController();
     final dia = TextEditingController();
     final pulse = TextEditingController();
+    var loggedAt = DateTime.now();
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -94,49 +96,57 @@ class BpScreen extends ConsumerWidget {
           top: AppSpacing.lg,
           bottom: MediaQuery.viewInsetsOf(ctx).bottom + AppSpacing.lg,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Log blood pressure', style: ctx.textStyles.titleLarge),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    label: 'Systolic',
-                    controller: sys,
-                    prefixIcon: Icons.arrow_upward,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+        child: StatefulBuilder(
+          builder: (ctx, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Log blood pressure', style: ctx.textStyles.titleLarge),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      label: 'Systolic',
+                      controller: sys,
+                      prefixIcon: Icons.arrow_upward,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
-                    label: 'Diastolic',
-                    controller: dia,
-                    prefixIcon: Icons.arrow_downward,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: AppTextField(
+                      label: 'Diastolic',
+                      controller: dia,
+                      prefixIcon: Icons.arrow_downward,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Pulse (optional)',
-              controller: pulse,
-              prefixIcon: Icons.monitor_heart_outlined,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppButton(label: 'Save', onPressed: () => Navigator.pop(ctx, true)),
-          ],
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Pulse (optional)',
+                controller: pulse,
+                prefixIcon: Icons.monitor_heart_outlined,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _WhenPicker(
+                value: loggedAt,
+                onChanged: (v) => setState(() => loggedAt = v),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              AppButton(
+                  label: 'Save', onPressed: () => Navigator.pop(ctx, true)),
+            ],
+          ),
         ),
       ),
     );
@@ -151,7 +161,7 @@ class BpScreen extends ConsumerWidget {
                 systolic: s,
                 diastolic: d,
                 pulse: int.tryParse(pulse.text.trim()),
-                loggedAt: DateTime.now(),
+                loggedAt: loggedAt,
               ),
             );
       }
@@ -159,6 +169,36 @@ class BpScreen extends ConsumerWidget {
     sys.dispose();
     dia.dispose();
     pulse.dispose();
+  }
+}
+
+/// A labelled "When" row that opens a date + time picker, shared styling for the
+/// vitals log sheets. Shows the chosen date/time and lets the user change it.
+class _WhenPicker extends StatelessWidget {
+  const _WhenPicker({required this.value, required this.onChanged});
+
+  final DateTime value;
+  final ValueChanged<DateTime> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      icon: const Icon(Icons.event),
+      style: OutlinedButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        minimumSize: const Size.fromHeight(52),
+      ),
+      label: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'When: ${DateFormat('EEE, d MMM · h:mm a').format(value)}',
+        ),
+      ),
+      onPressed: () async {
+        final picked = await pickDateTime(context, initial: value);
+        if (picked != null) onChanged(picked);
+      },
+    );
   }
 }
 

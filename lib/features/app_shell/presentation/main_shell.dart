@@ -23,12 +23,14 @@ class _MainShellState extends ConsumerState<MainShell> {
   void initState() {
     super.initState();
     // Register for push once we're in the signed-in shell (guarded internally),
-    // and proactively ask for notification permission so medicine/water/
-    // appointment reminders can actually fire (many users never open the
-    // Medicines screen where it was previously requested).
+    // and proactively ask for notification/alarm permissions up front — on the
+    // first launch after install or update — so medicine/water/appointment
+    // reminders can actually fire. `ensurePermissionsRequested` is once-per-
+    // install, so it won't re-prompt (or re-open the exact-alarm settings
+    // screen) on every app open.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(pushControllerProvider).init();
-      ref.read(notificationServiceProvider).requestPermissions();
+      ref.read(notificationServiceProvider).ensurePermissionsRequested();
     });
   }
 

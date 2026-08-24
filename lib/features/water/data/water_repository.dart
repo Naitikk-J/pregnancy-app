@@ -19,12 +19,33 @@ class WaterRepository {
     });
   }
 
-  Future<void> addMl(String dateKey, int deltaMl, int goalMl) {
+  /// Appends a timestamped drink and atomically bumps the day total. Keeping the
+  /// total as an increment preserves the offline-safe behaviour of rapid taps,
+  /// while [WaterEntry] records exactly when each drink happened.
+  Future<void> addEntry(String dateKey, WaterEntry entry, int goalMl) {
     return _col.doc(dateKey).set(
       {
         'dateKey': dateKey,
         'goalMl': goalMl,
-        'consumedMl': FieldValue.increment(deltaMl),
+        'consumedMl': FieldValue.increment(entry.ml),
+        'entries': FieldValue.arrayUnion([entry.toJson()]),
+        'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Removes a single timestamped drink, recomputing the day total from the
+  /// remaining entries so the ring and the log stay in sync.
+  Future<void> removeEntry(WaterDay day, WaterEntry entry, int goalMl) {
+    final remaining = day.entries.where((e) => e.id != entry.id).toList();
+    final consumed = remaining.fold<int>(0, (acc, e) => acc + e.ml);
+    return _col.doc(day.dateKey).set(
+      {
+        'dateKey': day.dateKey,
+        'goalMl': goalMl,
+        'consumedMl': consumed,
+        'entries': [for (final e in remaining) e.toJson()],
         'updatedAt': DateTime.now().toUtc().toIso8601String(),
       },
       SetOptions(merge: true),

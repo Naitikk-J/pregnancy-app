@@ -41,6 +41,32 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     _scrollToEnd();
   }
 
+  Future<void> _confirmClear(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete chat?'),
+        content: const Text(
+            'This clears your whole conversation with Mira. This can’t be '
+            'undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      ref.read(chatControllerProvider.notifier).reset();
+      if (context.mounted) context.showSnack('Chat deleted.');
+    }
+  }
+
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
@@ -64,11 +90,33 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         title: const Text('Ask Mira'),
         actions: [
           if (messages.isNotEmpty)
-            IconButton(
-              tooltip: 'New chat',
-              icon: const Icon(Icons.refresh),
-              onPressed: () =>
-                  ref.read(chatControllerProvider.notifier).reset(),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (v) {
+                if (v == 'new') {
+                  ref.read(chatControllerProvider.notifier).reset();
+                } else if (v == 'delete') {
+                  _confirmClear(context);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'new',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.refresh),
+                    title: Text('New chat'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Delete chat'),
+                  ),
+                ),
+              ],
             ),
         ],
       ),

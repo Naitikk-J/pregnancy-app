@@ -103,8 +103,21 @@ class MedicineActions {
   int _notifId(String medId, String time) =>
       IdUtils.stableNotificationId('med_${medId}_$time');
 
+  int _weeklyNotifId(String medId, int weekday, String time) =>
+      IdUtils.stableNotificationId('med_${medId}_${weekday}_$time');
+
   int _endNotifId(String medId) =>
       IdUtils.stableNotificationId('medend_$medId');
+
+  /// Cancels every possible alarm id for one medicine at [time] — both the daily
+  /// id and all seven weekday ids — so switching between daily and weekly (or
+  /// changing the chosen days) never leaves an orphan alarm firing.
+  Future<void> _cancelForTime(String medId, String time) async {
+    await _notifications.cancel(_notifId(medId, time));
+    for (var wd = 1; wd <= 7; wd++) {
+      await _notifications.cancel(_weeklyNotifId(medId, wd, time));
+    }
+  }
 
   Future<void> save(Medicine med, {List<String> previousTimes = const []}) async {
     // Saving the medicine is the primary action and must succeed on its own.
@@ -113,10 +126,10 @@ class MedicineActions {
     // must never make "save medicine" fail (this was a real bug — the med was
     // written but the reminder call threw, so the UI reported failure).
     try {
-      for (final time in previousTimes) {
-        if (!med.times.contains(time)) {
-          await _notifications.cancel(_notifId(med.id, time));
-        }
+      // Clear alarms for every time we've ever used for this med (old + new),
+      // across both the daily and weekly schemes, then reschedule fresh.
+      for (final time in {...previousTimes, ...med.times}) {
+        await _cancelForTime(med.id, time);
       }
       await _scheduleReminders(med);
     } catch (_) {
@@ -125,24 +138,43 @@ class MedicineActions {
     }
   }
 
-  /// (Re)schedules the daily dose alarms and the "course ending soon" reminder
-  /// for one medicine. Idempotent — cancels before scheduling.
+  /// (Re)schedules the dose alarms and the "course ending soon" reminder for one
+  /// medicine. Handles both every-day and specific-weekday schedules. Idempotent
+  /// — cancels before scheduling.
   Future<void> _scheduleReminders(Medicine med) async {
-    // Daily dose alarms.
     for (final time in med.times) {
-      final id = _notifId(med.id, time);
-      await _notifications.cancel(id);
+      await _cancelForTime(med.id, time);
       if (!med.active) continue;
       final parts = time.split(':');
-      await _notifications.scheduleDaily(
-        id: id,
-        title: 'Time for ${med.name}',
-        body: '${med.dosage} · ${med.timingLabel}',
-        hour: int.tryParse(parts.first) ?? 9,
-        minute: int.tryParse(parts.last) ?? 0,
-        isMedicine: true,
-        payload: 'MED|${med.id}|$time',
-      );
+      final hour = int.tryParse(parts.first) ?? 9;
+      final minute = int.tryParse(parts.last) ?? 0;
+
+      if (med.weekdays.isEmpty) {
+        // Every day.
+        await _notifications.scheduleDaily(
+          id: _notifId(med.id, time),
+          title: 'Time for ${med.name}',
+          body: '${med.dosage} · ${med.timingLabel}',
+          hour: hour,
+          minute: minute,
+          isMedicine: true,
+          payload: 'MED|${med.id}|$time',
+        );
+      } else {
+        // Specific weekdays only.
+        for (final wd in med.weekdays) {
+          await _notifications.scheduleWeekly(
+            id: _weeklyNotifId(med.id, wd, time),
+            title: 'Time for ${med.name}',
+            body: '${med.dosage} · ${med.timingLabel}',
+            weekday: wd,
+            hour: hour,
+            minute: minute,
+            isMedicine: true,
+            payload: 'MED|${med.id}|$time',
+          );
+        }
+      }
     }
 
     // "Course ending soon" reminder, a few days before the end date.
@@ -177,13 +209,22 @@ class MedicineActions {
     }
   }
 
-  /// Fires a sample medicine alarm ~8 seconds from now so the user can confirm
-  /// notifications/alarms actually work on their device.
+  /// Shows a test alarm **immediately** (bypassing scheduling) *and* schedules
+  /// one ~8 seconds out. The instant one proves notifications aren't blocked;
+  /// the delayed one proves the OS delivers scheduled alarms. If only the first
+  /// appears, the problem is exact-alarm/battery settings, not permissions.
   Future<void> sendTestReminder() async {
+    await _notifications.show(
+      id: IdUtils.stableNotificationId('med_test_now'),
+      title: 'Test alarm (now) ⏰',
+      body: 'Notifications work! Waiting for the scheduled one in ~8 seconds…',
+      isMedicine: true,
+      payload: 'TEST',
+    );
     await _notifications.scheduleAt(
       id: IdUtils.stableNotificationId('med_test'),
-      title: 'Test reminder ⏰',
-      body: 'If you can see this, medicine alarms are working on your phone.',
+      title: 'Test reminder (scheduled) ⏰',
+      body: 'If you see this too, scheduled medicine alarms work on your phone.',
       when: DateTime.now().add(const Duration(seconds: 8)),
       isMedicine: true,
       payload: 'TEST',
@@ -196,7 +237,7 @@ class MedicineActions {
   Future<void> delete(Medicine med) async {
     await _crud.delete(med.id);
     for (final time in med.times) {
-      await _notifications.cancel(_notifId(med.id, time));
+      await _cancelForTime(med.id, time);
     }
     await _notifications.cancel(_endNotifId(med.id));
   }
@@ -264,13 +305,6 @@ final medicineRescheduleProvider = FutureProvider<void>((ref) async {
   final meds = ref.watch(medicinesProvider).valueOrNull;
   if (meds == null || meds.isEmpty) return;
   await ref.read(medicineActionsProvider)?.rescheduleAll(meds);
-});
-
-/// Current notification/alarm readiness (permission + exact-alarm state), used
-/// to warn the user in-app when reminders would be silently blocked.
-final notificationStatusProvider =
-    FutureProvider<NotificationStatus>((ref) async {
-  return ref.read(notificationServiceProvider).status();
 });
 
 final medicineActionsProvider = Provider<MedicineActions?>((ref) {
