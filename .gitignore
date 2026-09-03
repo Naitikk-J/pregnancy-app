@@ -7,15 +7,22 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 pubspec.lock
+*.g.dart
+*.freezed.dart
+*.mocks.dart
 
 # IDE
 .idea/
 .vscode/
 *.iml
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+._*
 
 # Firebase secrets (never commit)
 google-services.json
@@ -27,8 +34,14 @@ functions/.env
 *.jks
 key.properties
 
+# Environment files
+.env
+.env.*
+!.env.example
+
 # Coverage
 coverage/
+lcov.info
 
 # Bundled Flutter SDK (3.3 GB - never commit; too large for GitHub)
 flutter_windows_*/
@@ -41,3 +54,33 @@ package-lock.json
 # Firebase local cache & logs
 .firebase/
 *.log
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Planning / Agent directories
+.planning/
+.agents/
+
+# Android build artifacts
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Web
+web/.dart_tool/
+
+# Misc
+*.pyc
+.vagrant/
+.sconsign.dblite

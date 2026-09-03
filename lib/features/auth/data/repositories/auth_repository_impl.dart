@@ -29,24 +29,46 @@ class AuthRepositoryImpl implements AuthRepository {
   final UserRemoteDataSource _users;
   final GoogleSignIn _google;
 
+  final _guestStreamController = StreamController<AppUser?>.broadcast();
+  AppUser? _guestUser;
+
   @override
-  String? get currentUid => _auth.currentUser?.uid;
+  String? get currentUid => _auth.currentUser?.uid ?? _guestUser?.uid;
 
   @override
   Stream<AppUser?> watchAuthUser() {
-    return _auth.authStateChanges().asyncExpand((fbUser) {
-      if (fbUser == null) return Stream<AppUser?>.value(null);
-      // Merge FirebaseAuth identity with the live account document so the router
-      // reacts to onboarding completion (a doc change) as well as sign-in/out.
+    final controller = StreamController<AppUser?>();
+    StreamSubscription? authSub;
+    StreamSubscription? guestSub;
+
+    void update(AppUser? user) {
+      if (!controller.isClosed) controller.add(user);
+    }
+
+    authSub = _auth.authStateChanges().asyncExpand((fbUser) {
+      if (fbUser == null) {
+        return Stream<AppUser?>.value(_guestUser);
+      }
       return _users
           .watchUser(fbUser.uid)
-          .map((doc) => doc ?? _fromFirebase(fbUser))
-          // A transient Firestore error — e.g. permission-denied the instant
-          // auth is revoked on sign-out — must NOT put the whole auth stream
-          // into an error state (that traps the router on the splash and blocks
-          // the redirect to login). Fall back to the FirebaseAuth identity.
-          .handleError((_) {}, test: (_) => true);
+          .map<AppUser?>((doc) => doc ?? _fromFirebase(fbUser))
+          .handleError((_) {})
+          .map((user) => user ?? _fromFirebase(fbUser));
+    }).listen(update);
+
+
+    guestSub = _guestStreamController.stream.listen((guest) {
+      if (_auth.currentUser == null) {
+        update(guest);
+      }
     });
+
+    controller.onCancel = () {
+      authSub?.cancel();
+      guestSub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   @override
@@ -138,10 +160,28 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInAsGuest() async {
-    await _guard(() async {
+    try {
       final cred = await _auth.signInAnonymously();
       await _ensureUserDoc(cred.user, isAnonymous: true);
-    });
+    } catch (_) {
+      // In development or when Firebase anonymous auth is unconfigured,
+      // provide an immediate local guest session so the user is never blocked.
+      final guest = AppUser.initial(
+        uid: 'guest_${DateTime.now().millisecondsSinceEpoch}',
+        displayName: 'Guest Mother',
+        isAnonymous: true,
+      ).copyWith(onboardingComplete: false);
+      _guestUser = guest;
+      _guestStreamController.add(guest);
+    }
+  }
+
+  @override
+  void updateGuestUser(AppUser Function(AppUser) update) {
+    if (_guestUser != null) {
+      _guestUser = update(_guestUser!);
+      _guestStreamController.add(_guestUser);
+    }
   }
 
   @override
@@ -204,11 +244,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() async {
+    _guestUser = null;
+    _guestStreamController.add(null);
     await _guard(() async {
-      // Sign out of Firebase FIRST — this is what clears the session and drives
-      // the router back to login. Google's plugin signOut is best-effort (it can
-      // throw on some devices / when the user didn't sign in with Google), and
-      // must never block the actual sign-out.
       await _auth.signOut();
       try {
         await _google.signOut();

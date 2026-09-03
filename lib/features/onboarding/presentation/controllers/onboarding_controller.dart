@@ -4,7 +4,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/enums.dart';
+import '../../../../core/error/failures.dart';
 import '../../../../core/utils/pregnancy_calculator.dart';
+
 import '../../../../shared/models/pregnancy.dart';
 import '../../../../shared/models/user_profile.dart';
 import '../../../auth/presentation/controllers/auth_providers.dart';
@@ -56,6 +58,12 @@ class OnboardingDraft {
 
   int? get currentWeek =>
       lmpDate == null ? null : PregnancyCalculator.currentWeek(lmpDate!);
+
+  Trimester? get trimester =>
+      currentWeek == null ? null : PregnancyCalculator.trimesterForWeek(currentWeek!);
+
+  int? get daysRemaining =>
+      dueDate == null ? null : PregnancyCalculator.daysRemaining(dueDate!);
 
   OnboardingDraft copyWith({
     String? name,
@@ -166,8 +174,14 @@ class OnboardingController extends Notifier<OnboardingDraft> {
   /// Persists the draft. Returns true on success. Throws a mapped Failure the
   /// caller can surface if the write fails.
   Future<bool> submit() async {
-    final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null || state.lmpDate == null) return false;
+    final uid = ref.read(currentUserProvider)?.uid ??
+        ref.read(authRepositoryProvider).currentUid;
+    if (uid == null) {
+      throw const AuthFailure(message: 'You must be signed in to complete account setup.');
+    }
+    if (state.lmpDate == null) {
+      throw const ValidationFailure('Please select your last menstrual period (LMP) date.');
+    }
 
     final pregnancyId = const Uuid().v4();
     await ref.read(profileRepositoryProvider).completeOnboarding(
@@ -176,9 +190,18 @@ class OnboardingController extends Notifier<OnboardingDraft> {
           profile: state.toProfile(),
           pregnancy: state.toPregnancy(id: pregnancyId, ownerUid: uid),
         );
+
+    ref.read(authRepositoryProvider).updateGuestUser((guest) => guest.copyWith(
+          onboardingComplete: true,
+          activePregnancyId: pregnancyId,
+          displayName: state.name.isNotEmpty ? state.name : guest.displayName,
+          role: state.role,
+        ));
+
     return true;
   }
 }
+
 
 final onboardingControllerProvider =
     NotifierProvider<OnboardingController, OnboardingDraft>(

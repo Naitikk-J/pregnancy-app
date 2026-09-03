@@ -224,33 +224,56 @@ class _Bubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isUser = message.isUser;
+
     final bg = isUser
-        ? context.colors.primary
+        ? scheme.primary
         : message.isError
-            ? context.colors.errorContainer
-            : context.colors.surfaceContainerHighest;
+            ? scheme.errorContainer
+            : (isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow);
     final fg = isUser
-        ? context.colors.onPrimary
+        ? scheme.onPrimary
         : message.isError
-            ? context.colors.onErrorContainer
-            : context.colors.onSurface;
+            ? scheme.onErrorContainer
+            : scheme.onSurface;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-        constraints: BoxConstraints(maxWidth: context.screenWidth * 0.78),
+            horizontal: AppSpacing.md, vertical: 10),
+        constraints: BoxConstraints(maxWidth: context.screenWidth * 0.82),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isUser ? 18 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 18),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isUser
+                  ? scheme.primary.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: message.pending
             ? const _Typing()
-            : SelectableText(message.text,
-                style: context.textStyles.bodyMedium?.copyWith(color: fg)),
+            : SelectableText(
+                message.text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: fg,
+                  height: 1.45,
+                ),
+              ),
       ),
     );
   }
@@ -261,6 +284,8 @@ class _Typing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -268,12 +293,18 @@ class _Typing extends StatelessWidget {
           height: 16,
           width: 16,
           child: CircularProgressIndicator(
-              strokeWidth: 2, color: context.colors.onSurfaceVariant),
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Text('Mira is typing…',
-            style: context.textStyles.bodySmall
-                ?.copyWith(color: context.colors.onSurfaceVariant)),
+        Text(
+          'Mira is thinking…',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       ],
     );
   }
@@ -282,18 +313,21 @@ class _Typing extends StatelessWidget {
 class _Disclaimer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
-      color: context.colors.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: scheme.surfaceContainerLowest,
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
       child: Text(
-        'Mira gives general information, not medical advice. For any concern, '
-        'contact your doctor.',
+        'Mira provides educational information, not medical advice. Always consult your doctor.',
         textAlign: TextAlign.center,
-        style: context.textStyles.labelSmall
-            ?.copyWith(color: context.colors.onSurfaceVariant),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+        ),
       ),
     );
   }
 }
+

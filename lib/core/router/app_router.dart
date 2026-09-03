@@ -27,6 +27,7 @@ import '../../features/appointments/presentation/appointments_screen.dart';
 import '../../features/blood_pressure/presentation/bp_screen.dart';
 import '../../features/blood_sugar/presentation/glucose_screen.dart';
 import '../../features/calendar/presentation/calendar_screen.dart';
+import '../../features/care/presentation/care_hub_screen.dart';
 import '../../features/contractions/presentation/contraction_timer_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/emergency/presentation/emergency_screen.dart';
@@ -378,6 +379,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const BloodDonorsScreen(),
       ),
       GoRoute(
+        path: AppRoutes.profile,
+        name: AppRoutes.profileName,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfileTabScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.editProfile,
         name: AppRoutes.editProfileName,
         parentNavigatorKey: _rootNavigatorKey,
@@ -416,18 +423,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.tools,
-                name: AppRoutes.toolsName,
-                builder: (context, state) => const ToolsScreen(),
+                path: AppRoutes.care,
+                name: AppRoutes.careName,
+                builder: (context, state) => const CareHubScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.profile,
-                name: AppRoutes.profileName,
-                builder: (context, state) => const ProfileTabScreen(),
+                path: AppRoutes.tools,
+                name: AppRoutes.toolsName,
+                builder: (context, state) => const ToolsScreen(),
               ),
             ],
           ),

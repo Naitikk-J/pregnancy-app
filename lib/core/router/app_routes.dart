@@ -25,6 +25,8 @@ class AppRoutes {
   static const String homeName = 'home';
   static const String tracker = '/tracker';
   static const String trackerName = 'tracker';
+  static const String care = '/care';
+  static const String careName = 'care';
   static const String tools = '/tools';
   static const String toolsName = 'tools';
   static const String profile = '/profile';

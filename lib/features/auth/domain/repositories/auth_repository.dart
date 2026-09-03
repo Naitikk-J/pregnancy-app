@@ -37,6 +37,9 @@ abstract interface class AuthRepository {
 
   Future<void> signInAsGuest();
 
+  /// Updates the local guest user in memory and emits the change to subscribers.
+  void updateGuestUser(AppUser Function(AppUser) update);
+
   /// Starts phone verification. On some platforms auto-retrieval may complete
   /// sign-in immediately; [onAutoVerified] is invoked in that case.
   Future<PhoneVerification> startPhoneVerification({

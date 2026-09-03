@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/extensions/context_extensions.dart';
@@ -161,7 +163,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     setState(() => _submitting = true);
     try {
       await _controller.submit();
-      // Router redirects to home when onboardingComplete flips.
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
     } on Failure catch (f) {
       if (mounted) context.showSnack(f.message, isError: true);
     } catch (_) {
@@ -369,26 +373,70 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   // ---- Step 4: Pregnancy ----
   Widget _stepPregnancy(OnboardingDraft d) {
     final df = DateFormat('EEE, d MMM yyyy');
+    final now = DateTime.now();
     return _stepShell(
       'Your pregnancy',
-      'Pick your last period date so we can calculate your weeks.',
+      'Pick your last period date (LMP) or estimated due date (EDD).',
       [
+        // Quick 1-tap shortcuts
+        Text('Quick presets', style: context.textStyles.titleSmall),
+        const SizedBox(height: AppSpacing.xs),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final (label, weeksAgo) in [
+              ('4 Weeks', 4),
+              ('8 Weeks', 8),
+              ('12 Weeks', 12),
+              ('16 Weeks', 16),
+              ('20 Weeks', 20),
+              ('28 Weeks', 28),
+            ])
+              ActionChip(
+                avatar: const Icon(Icons.flash_on, size: 16),
+                label: Text(label),
+                onPressed: () {
+                  final lmp = now.subtract(Duration(days: weeksAgo * 7));
+                  _controller.update((x) => x.copyWith(lmpDate: lmp));
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // LMP Date Card
         AppCard(
           onTap: _pickLmp,
           child: Row(
             children: [
-              Icon(Icons.calendar_today_outlined,
-                  color: context.colors.primary),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: context.colors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.calendar_month_outlined,
+                    color: context.colors.primary, size: 22),
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Last period (LMP)',
-                        style: context.textStyles.bodySmall),
+                    Text('Last menstrual period (LMP)',
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        )),
+                    const SizedBox(height: 2),
                     Text(
-                      d.lmpDate == null ? 'Tap to select' : df.format(d.lmpDate!),
-                      style: context.textStyles.titleMedium,
+                      d.lmpDate == null ? 'Tap to choose LMP date' : df.format(d.lmpDate!),
+                      style: context.textStyles.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: d.lmpDate == null
+                            ? context.colors.primary
+                            : context.colors.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -397,6 +445,52 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ],
           ),
         ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Due Date Picker Card (Alternative)
+        AppCard(
+          onTap: _pickDueDate,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: context.colors.tertiary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.child_care_outlined,
+                    color: context.colors.tertiary, size: 22),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Or select Estimated Due Date (EDD)',
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        )),
+                    const SizedBox(height: 2),
+                    Text(
+                      d.dueDate == null
+                          ? 'Tap to choose Due Date'
+                          : df.format(d.dueDate!),
+                      style: context.textStyles.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: d.dueDate == null
+                            ? context.colors.tertiary
+                            : context.colors.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+
         if (d.lmpDate != null) ...[
           const SizedBox(height: AppSpacing.md),
           AppCard(
@@ -404,15 +498,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             child: Row(
               children: [
                 Icon(Icons.pregnant_woman,
-                    color: context.colors.onSecondaryContainer),
+                    color: context.colors.onSecondaryContainer, size: 28),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: Text(
-                    'You are in week ${d.currentWeek}.\n'
-                    'Estimated due date: ${df.format(d.dueDate!)}',
-                    style: context.textStyles.bodyMedium?.copyWith(
-                      color: context.colors.onSecondaryContainer,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Week ${d.currentWeek} • ${d.trimester?.label ?? ''}',
+                        style: context.textStyles.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: context.colors.onSecondaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Estimated due date: ${df.format(d.dueDate!)} (${d.daysRemaining} days left)',
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -437,17 +543,44 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   Future<void> _pickLmp() async {
     final now = DateTime.now();
-    final initial = ref.read(onboardingControllerProvider).lmpDate ??
-        now.subtract(const Duration(days: 56));
+    final first = now.subtract(const Duration(days: 300));
+    final draftLmp = ref.read(onboardingControllerProvider).lmpDate;
+    final initial = (draftLmp != null && draftLmp.isAfter(first) && draftLmp.isBefore(now))
+        ? draftLmp
+        : now.subtract(const Duration(days: 56));
+
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: now.subtract(const Duration(days: 300)),
+      firstDate: first,
       lastDate: now,
-      helpText: 'Select your last menstrual period',
+      helpText: 'Select your last menstrual period (LMP)',
     );
     if (picked != null) {
       _controller.update((x) => x.copyWith(lmpDate: picked));
+    }
+  }
+
+  Future<void> _pickDueDate() async {
+    final now = DateTime.now();
+    final first = now.add(const Duration(days: 1));
+    final last = now.add(const Duration(days: 290));
+    final draftDue = ref.read(onboardingControllerProvider).dueDate;
+    final initial = (draftDue != null && draftDue.isAfter(first) && draftDue.isBefore(last))
+        ? draftDue
+        : now.add(const Duration(days: 224));
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
+      helpText: 'Select your estimated due date (EDD)',
+    );
+    if (picked != null) {
+      // LMP is exactly 280 days before the due date
+      final derivedLmp = picked.subtract(const Duration(days: 280));
+      _controller.update((x) => x.copyWith(lmpDate: derivedLmp));
     }
   }
 

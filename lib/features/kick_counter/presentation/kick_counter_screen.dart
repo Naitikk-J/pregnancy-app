@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -128,35 +129,89 @@ class _ActiveSessionView extends ConsumerWidget {
   }
 }
 
-/// The big circular "I felt a kick" target.
-class _TapButton extends StatelessWidget {
+/// The big circular "I felt a kick" target with tactile micro-interactions.
+class _TapButton extends StatefulWidget {
   const _TapButton({required this.onTap});
   final VoidCallback onTap;
 
   @override
+  State<_TapButton> createState() => _TapButtonState();
+}
+
+class _TapButtonState extends State<_TapButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 140),
+    lowerBound: 0.93,
+    upperBound: 1.0,
+    value: 1.0,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.mediumImpact();
+    _controller.reverse().then((_) => _controller.forward());
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Semantics(
       button: true,
       label: 'Record a kick',
-      child: Material(
-        color: context.colors.primary,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            width: 200,
-            height: 200,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.child_care,
-                    size: 56, color: context.colors.onPrimary),
-                const SizedBox(height: AppSpacing.sm),
-                Text('I felt a kick',
-                    style: context.textStyles.titleMedium
-                        ?.copyWith(color: context.colors.onPrimary)),
+      child: ScaleTransition(
+        scale: _controller,
+        child: Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                scheme.primary,
+                Color.lerp(scheme.primary, const Color(0xFFC75B72), 0.3) ??
+                    scheme.primary,
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _handleTap,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.child_care,
+                      size: 56, color: scheme.onPrimary),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'I felt a kick',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -164,6 +219,7 @@ class _TapButton extends StatelessWidget {
     );
   }
 }
+
 
 class _KickHistoryView extends ConsumerWidget {
   const _KickHistoryView();
